@@ -25,4 +25,56 @@ final class IdeaStoreTests: XCTestCase {
 
         XCTAssertEqual(store.ideas.count, initial)
     }
+
+    func testAutosaveCreatesAndUpdatesDraftIdea() {
+        let store = IdeaStore()
+        let initial = store.ideas.count
+
+        let draftID = store.autosaveIdea(
+            id: nil,
+            title: "",
+            body: "A pocket notebook that nudges unfinished thoughts",
+            category: .experiment,
+            style: .sage
+        )
+
+        XCTAssertNotNil(draftID)
+        XCTAssertEqual(store.ideas.count, initial + 1)
+        XCTAssertEqual(store.idea(withID: draftID!)?.title, "Untitled idea")
+
+        let updatedID = store.autosaveIdea(
+            id: draftID,
+            title: "Pocket thinking coach",
+            body: "A pocket notebook that nudges unfinished thoughts",
+            category: .creatorMode,
+            style: .night
+        )
+
+        XCTAssertEqual(updatedID, draftID)
+        XCTAssertEqual(store.ideas.count, initial + 1)
+        XCTAssertEqual(store.idea(withID: draftID!)?.title, "Pocket thinking coach")
+        XCTAssertEqual(store.idea(withID: draftID!)?.category, .creatorMode)
+    }
+
+    func testAssistanceResultsAreStoredNewestFirst() {
+        let store = IdeaStore()
+        let ideaID = store.ideas[0].id
+        let first = IdeaAssistanceResult(
+            suggestions: [IdeaSuggestion(kind: .question, text: "First?")],
+            source: .localFallback,
+            assistanceLevel: .minimal,
+            modelName: "test"
+        )
+        let second = IdeaAssistanceResult(
+            suggestions: [IdeaSuggestion(kind: .question, text: "Second?")],
+            source: .cloud,
+            assistanceLevel: .standard,
+            modelName: "test"
+        )
+
+        store.addAssistanceResult(first, to: ideaID)
+        store.addAssistanceResult(second, to: ideaID)
+
+        XCTAssertEqual(store.idea(withID: ideaID)?.assistanceResults.first, second)
+    }
 }

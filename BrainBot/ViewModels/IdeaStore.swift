@@ -40,12 +40,56 @@ final class IdeaStore: ObservableObject {
         ideas.insert(idea, at: 0)
     }
 
+    @discardableResult
+    func autosaveIdea(
+        id: UUID?,
+        title: String,
+        body: String,
+        category: IdeaCategory,
+        style: IdeaVisualStyle
+    ) -> UUID? {
+        let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !cleanTitle.isEmpty || !cleanBody.isEmpty else { return id }
+
+        if let id, let index = ideas.firstIndex(where: { $0.id == id }) {
+            ideas[index].title = cleanTitle.isEmpty ? "Untitled idea" : cleanTitle
+            ideas[index].body = cleanBody
+            ideas[index].category = category
+            ideas[index].visualStyle = style
+            ideas[index].updatedAt = .now
+            return id
+        }
+
+        let idea = Idea(
+            id: id ?? UUID(),
+            title: cleanTitle.isEmpty ? "Untitled idea" : cleanTitle,
+            body: cleanBody,
+            category: category,
+            visualStyle: style
+        )
+        ideas.insert(idea, at: 0)
+        return idea.id
+    }
+
     func updateIdea(_ idea: Idea, title: String, body: String, category: IdeaCategory, style: IdeaVisualStyle) {
         guard let index = ideas.firstIndex(where: { $0.id == idea.id }) else { return }
-        ideas[index].title = title
-        ideas[index].body = body
+        let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        ideas[index].title = cleanTitle.isEmpty ? "Untitled idea" : cleanTitle
+        ideas[index].body = body.trimmingCharacters(in: .whitespacesAndNewlines)
         ideas[index].category = category
         ideas[index].visualStyle = style
+        ideas[index].updatedAt = .now
+    }
+
+    func idea(withID id: UUID) -> Idea? {
+        ideas.first { $0.id == id }
+    }
+
+    func addAssistanceResult(_ result: IdeaAssistanceResult, to ideaID: UUID) {
+        guard let index = ideas.firstIndex(where: { $0.id == ideaID }) else { return }
+        ideas[index].assistanceResults.insert(result, at: 0)
         ideas[index].updatedAt = .now
     }
 

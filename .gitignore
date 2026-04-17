@@ -1,0 +1,16 @@
+.DS_Store
+
+# Xcode user/local state
+*.xcuserstate
+xcuserdata/
+DerivedData/
+
+# Local model binaries are too large for normal Git history.
+# Keep these files locally and document/download them separately, or use Git LFS later.
+BrainBot/Resources/Models/*.gguf
+BrainBot/Resources/Models/*.bin
+BrainBot/Resources/Models/*.safetensors
+
+# Debug symbol bundles are large and not needed for normal source builds.
+*.dSYM/
+ThirdParty/**/*.dSYM/

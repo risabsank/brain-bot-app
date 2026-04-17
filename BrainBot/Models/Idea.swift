@@ -14,6 +14,7 @@ struct Idea: Identifiable, Hashable {
     var body: String
     var category: IdeaCategory
     var visualStyle: IdeaVisualStyle
+    var assistanceResults: [IdeaAssistanceResult]
     let createdAt: Date
     var updatedAt: Date
 
@@ -23,6 +24,7 @@ struct Idea: Identifiable, Hashable {
         body: String,
         category: IdeaCategory,
         visualStyle: IdeaVisualStyle,
+        assistanceResults: [IdeaAssistanceResult] = [],
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -31,6 +33,7 @@ struct Idea: Identifiable, Hashable {
         self.body = body
         self.category = category
         self.visualStyle = visualStyle
+        self.assistanceResults = assistanceResults
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

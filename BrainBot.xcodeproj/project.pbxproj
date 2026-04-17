@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		33BF0B4E2F91F1ED00B7B608 /* ThirdParty/llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 33BF0B4D2F91F1ED00B7B608 /* ThirdParty/llama.xcframework */; };
+		33BF0B552F91F71000B7B608 /* ThirdParty/llama.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 33BF0B4D2F91F1ED00B7B608 /* ThirdParty/llama.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		3389A7BA2F90AF52006F7FDC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -23,10 +28,26 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		33BF0B562F91F71000B7B608 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				33BF0B552F91F71000B7B608 /* ThirdParty/llama.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		3389A7AC2F90AF51006F7FDC /* BrainBot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BrainBot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3389A7B92F90AF52006F7FDC /* BrainBotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BrainBotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3389A7C32F90AF53006F7FDC /* BrainBotUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BrainBotUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		33BF0B4D2F91F1ED00B7B608 /* ThirdParty/llama.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = ThirdParty/llama.xcframework; sourceTree = SOURCE_ROOT; };
+		33BF0B532F91F3D100B7B608 /* BrainBot/Resources/Models/qwen3-0.6b-q4_0.gguf */ = {isa = PBXFileReference; lastKnownFileType = text; path = "BrainBot/Resources/Models/qwen3-0.6b-q4_0.gguf"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -52,6 +73,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				33BF0B4E2F91F1ED00B7B608 /* ThirdParty/llama.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -75,10 +97,12 @@
 		3389A7A32F90AF51006F7FDC = {
 			isa = PBXGroup;
 			children = (
+				33BF0B4D2F91F1ED00B7B608 /* ThirdParty/llama.xcframework */,
 				3389A7AE2F90AF51006F7FDC /* BrainBot */,
 				3389A7BC2F90AF52006F7FDC /* BrainBotTests */,
 				3389A7C62F90AF53006F7FDC /* BrainBotUITests */,
 				3389A7AD2F90AF51006F7FDC /* Products */,
+				33BF0B4B2F91F0E500B7B608 /* backend */,
 			);
 			sourceTree = "<group>";
 		};
@@ -92,6 +116,22 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		33BF0B4A2F91F0E500B7B608 /* models */ = {
+			isa = PBXGroup;
+			children = (
+				33BF0B532F91F3D100B7B608 /* BrainBot/Resources/Models/qwen3-0.6b-q4_0.gguf */,
+			);
+			path = models;
+			sourceTree = "<group>";
+		};
+		33BF0B4B2F91F0E500B7B608 /* backend */ = {
+			isa = PBXGroup;
+			children = (
+				33BF0B4A2F91F0E500B7B608 /* models */,
+			);
+			path = backend;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -102,6 +142,7 @@
 				3389A7A82F90AF51006F7FDC /* Sources */,
 				3389A7A92F90AF51006F7FDC /* Frameworks */,
 				3389A7AA2F90AF51006F7FDC /* Resources */,
+				33BF0B562F91F71000B7B608 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
