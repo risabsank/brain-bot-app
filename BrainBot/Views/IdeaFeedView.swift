@@ -84,6 +84,12 @@ private struct IdeaCardView: View {
                 .font(.subheadline)
                 .lineLimit(3)
                 .foregroundStyle(.secondary)
+
+            if idea.audioRecordingURL != nil {
+                Label("Recording saved", systemImage: "waveform")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.midnightGreen)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)

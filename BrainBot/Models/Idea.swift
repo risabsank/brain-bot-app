@@ -15,6 +15,8 @@ struct Idea: Identifiable, Hashable {
     var category: IdeaCategory
     var visualStyle: IdeaVisualStyle
     var assistanceResults: [IdeaAssistanceResult]
+    var audioRecordingURL: URL?
+    var transcript: String?
     let createdAt: Date
     var updatedAt: Date
 
@@ -25,6 +27,8 @@ struct Idea: Identifiable, Hashable {
         category: IdeaCategory,
         visualStyle: IdeaVisualStyle,
         assistanceResults: [IdeaAssistanceResult] = [],
+        audioRecordingURL: URL? = nil,
+        transcript: String? = nil,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -34,6 +38,8 @@ struct Idea: Identifiable, Hashable {
         self.category = category
         self.visualStyle = visualStyle
         self.assistanceResults = assistanceResults
+        self.audioRecordingURL = audioRecordingURL
+        self.transcript = transcript
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

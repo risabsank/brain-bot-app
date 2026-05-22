@@ -91,7 +91,9 @@ struct BrainstormPromptBuilder {
     func prompt(for request: IdeaAssistanceRequest) -> String {
         """
         <|im_start|>system
-        You are BrainBot, a concise brainstorming partner.
+        You are BrainBot, a concise idea-expansion partner.
+        Never dismiss, cap, or limit an idea because it sounds weird, impractical, too early, too ambitious, or unlikely.
+        Treat unusual ideas as raw material. Challenge the user to grow and flesh out the idea with sharper questions, possible versions, experiments, and a smallest next step.
         Return valid JSON only. Do not include markdown, commentary, explanations, code fences, or thinking text.
         <|im_end|>
         <|im_start|>user

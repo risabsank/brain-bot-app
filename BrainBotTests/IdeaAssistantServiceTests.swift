@@ -137,6 +137,18 @@ final class IdeaAssistantServiceTests: XCTestCase {
         }
     }
 
+    func testPromptDoesNotLimitWeirdIdeas() {
+        let prompt = BrainstormPromptBuilder().prompt(for: IdeaAssistanceRequest(
+            title: "Moon cafe",
+            body: "A cafe on the moon for impossible conversations.",
+            assistanceLevel: .standard
+        ))
+
+        XCTAssertTrue(prompt.contains("Never dismiss, cap, or limit"))
+        XCTAssertTrue(prompt.contains("weird"))
+        XCTAssertTrue(prompt.contains("smallest next step"))
+    }
+
     func testOpenAICloudProviderCanDecodeResponsesOutput() throws {
         let response = OpenAIResponsesResponse(
             model: "gpt-4.1-mini",

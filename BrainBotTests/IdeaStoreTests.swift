@@ -26,6 +26,15 @@ final class IdeaStoreTests: XCTestCase {
         XCTAssertEqual(store.ideas.count, initial)
     }
 
+    func testAddIdeaCanSaveAudioOnlyIdea() {
+        let store = IdeaStore()
+        let url = URL(fileURLWithPath: "/tmp/idea.m4a")
+
+        store.addIdea(title: "Voice idea", body: "", category: .quickWin, style: .mist, audioRecordingURL: url)
+
+        XCTAssertEqual(store.ideas.first?.audioRecordingURL, url)
+    }
+
     func testAutosaveCreatesAndUpdatesDraftIdea() {
         let store = IdeaStore()
         let initial = store.ideas.count
@@ -54,6 +63,25 @@ final class IdeaStoreTests: XCTestCase {
         XCTAssertEqual(store.ideas.count, initial + 1)
         XCTAssertEqual(store.idea(withID: draftID!)?.title, "Pocket thinking coach")
         XCTAssertEqual(store.idea(withID: draftID!)?.category, .creatorMode)
+    }
+
+    func testAutosaveCanAttachAudioAndTranscript() {
+        let store = IdeaStore()
+        let url = URL(fileURLWithPath: "/tmp/idea.m4a")
+
+        let draftID = store.autosaveIdea(
+            id: nil,
+            title: "Voice idea",
+            body: "",
+            category: .experiment,
+            style: .sage,
+            audioRecordingURL: url,
+            transcript: "A floating cafe for impossible conversations."
+        )
+
+        let idea = store.idea(withID: draftID!)
+        XCTAssertEqual(idea?.audioRecordingURL, url)
+        XCTAssertEqual(idea?.transcript, "A floating cafe for impossible conversations.")
     }
 
     func testAssistanceResultsAreStoredNewestFirst() {
