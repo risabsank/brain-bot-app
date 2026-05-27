@@ -31,13 +31,11 @@ enum IdeaSuggestionKind: String, CaseIterable, Codable, Hashable {
 
 enum IdeaAssistanceSource: String, Codable, Hashable {
     case local
-    case localFallback
     case cloud
 
     var label: String {
         switch self {
         case .local: return "Local"
-        case .localFallback: return "Local draft"
         case .cloud: return "Cloud"
         }
     }

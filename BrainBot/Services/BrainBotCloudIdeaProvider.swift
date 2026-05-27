@@ -69,12 +69,12 @@ struct BrainBotCloudIdeaProvider: IdeaSuggestionProviding {
     func suggestions(for request: IdeaAssistanceRequest) async throws -> IdeaAssistanceResult {
         guard configuration.isEnabled else {
             logger.notice("OpenAI cloud brainstorming is configured but disabled.")
-            throw IdeaAssistantError.cloudDisabled
+            throw IdeaAssistantError.poorQualityOutput
         }
 
         guard let apiKey = configuration.apiKey?.nilIfBlank else {
             logger.error("OpenAI cloud brainstorming is enabled, but no API key is configured.")
-            throw IdeaAssistantError.cloudAPIKeyMissing
+            throw IdeaAssistantError.poorQualityOutput
         }
 
         var urlRequest = URLRequest(url: configuration.endpoint)
@@ -90,12 +90,12 @@ struct BrainBotCloudIdeaProvider: IdeaSuggestionProviding {
         let (data, response) = try await session.data(for: urlRequest)
         guard let httpResponse = response as? HTTPURLResponse else {
             logger.error("OpenAI cloud brainstorm returned a non-HTTP response.")
-            throw IdeaAssistantError.cloudResponseInvalid
+            throw IdeaAssistantError.poorQualityOutput
         }
 
         guard (200..<300).contains(httpResponse.statusCode) else {
             logger.error("OpenAI cloud brainstorm failed. statusCode=\(httpResponse.statusCode), preview=\(Self.preview(data), privacy: .public)")
-            throw IdeaAssistantError.cloudResponseInvalid
+            throw IdeaAssistantError.poorQualityOutput
         }
 
         let responsesResponse = try JSONDecoder().decode(OpenAIResponsesResponse.self, from: data)
@@ -103,7 +103,7 @@ struct BrainBotCloudIdeaProvider: IdeaSuggestionProviding {
 
         guard suggestions.count == 3 else {
             logger.error("OpenAI cloud brainstorm returned the wrong suggestion count. count=\(suggestions.count)")
-            throw IdeaAssistantError.cloudResponseInvalid
+            throw IdeaAssistantError.poorQualityOutput
         }
 
         logger.notice("OpenAI cloud brainstorm decoded. suggestionCount=\(suggestions.count)")
@@ -117,7 +117,7 @@ struct BrainBotCloudIdeaProvider: IdeaSuggestionProviding {
 
     static func decodeSuggestions(from response: OpenAIResponsesResponse) throws -> [IdeaSuggestion] {
         guard let outputText = response.outputText else {
-            throw IdeaAssistantError.cloudResponseInvalid
+            throw IdeaAssistantError.poorQualityOutput
         }
 
         return try LlamaCppLocalIdeaProvider.decodeSuggestions(from: outputText)

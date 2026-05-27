@@ -22,7 +22,7 @@ struct LocalLLMConfiguration: Hashable {
     var bundledModelSubdirectory = "Resources/Models"
     var contextTokenCount: Int32 = 2048
     var batchTokenCount: Int32 = 512
-    var maxOutputTokens = 220
+    var maxOutputTokens = 512
 }
 
 struct BundledLlamaCppEngine: LocalLLMEngine {
@@ -269,7 +269,10 @@ struct LlamaCppLocalIdeaProvider: IdeaSuggestionProviding {
 
     func suggestions(for request: IdeaAssistanceRequest) async throws -> IdeaAssistanceResult {
         let prompt = promptBuilder.prompt(for: request)
-        let output = try await engine.generateText(prompt: prompt, maxTokens: configuration.maxOutputTokens)
+        let rawOutput = try await engine.generateText(prompt: prompt, maxTokens: configuration.maxOutputTokens)
+        // The prompt ends with {"suggestions":[ as an assistant prefill.
+        // The model continues from there, so prepend the prefix to reconstruct valid JSON.
+        let output = "{\"suggestions\":[" + rawOutput
         let suggestions = try Self.decodeSuggestions(from: output)
 
         return IdeaAssistanceResult(
@@ -288,7 +291,7 @@ struct LlamaCppLocalIdeaProvider: IdeaSuggestionProviding {
 
         guard let data = jsonText.data(using: .utf8) else {
             logger.error("Unable to convert extracted local LLM JSON text to UTF-8 data.")
-            throw IdeaAssistantError.cloudResponseInvalid
+            throw IdeaAssistantError.poorQualityOutput
         }
 
         let payload: SuggestionPayload
@@ -311,7 +314,18 @@ struct LlamaCppLocalIdeaProvider: IdeaSuggestionProviding {
     }
 
     private static func extractJSONPayload(from text: String) -> String {
-        let trimmed = text
+        // Qwen3 outputs <think>...</think> chain-of-thought before the JSON.
+        // Strip all complete thinking blocks, then truncate at any remaining opening tag.
+        var deThought = text
+        while let s = deThought.range(of: "<think>"),
+              let e = deThought.range(of: "</think>", range: s.upperBound..<deThought.endIndex) {
+            deThought.removeSubrange(s.lowerBound..<e.upperBound)
+        }
+        if let s = deThought.range(of: "<think>") {
+            deThought = String(deThought[deThought.startIndex..<s.lowerBound])
+        }
+
+        let trimmed = deThought
             .replacingOccurrences(of: "```json", with: "")
             .replacingOccurrences(of: "```JSON", with: "")
             .replacingOccurrences(of: "```", with: "")
@@ -367,59 +381,6 @@ struct LlamaCppLocalIdeaProvider: IdeaSuggestionProviding {
             .replacingOccurrences(of: "\n", with: " ")
             .replacingOccurrences(of: "\r", with: " ")
         return String(collapsed.prefix(500))
-    }
-}
-
-struct HeuristicIdeaProvider: IdeaSuggestionProviding {
-    var modelName: String { "On-device brainstorm fallback" }
-
-    func suggestions(for request: IdeaAssistanceRequest) async throws -> IdeaAssistanceResult {
-        guard request.isReady else { throw IdeaAssistantError.emptyIdea }
-
-        let focus = Self.focusPhrase(from: request)
-        let suggestions: [IdeaSuggestion]
-
-        switch request.assistanceLevel {
-        case .minimal:
-            suggestions = [
-                IdeaSuggestion(kind: .question, text: "What would make \(focus) useful enough to try this week?"),
-                IdeaSuggestion(kind: .question, text: "Who would care about this first, and what would they ask for next?"),
-                IdeaSuggestion(kind: .question, text: "What part feels exciting, uncertain, or too vague right now?")
-            ]
-        case .standard:
-            suggestions = [
-                IdeaSuggestion(kind: .question, text: "What is the smallest version of \(focus) you could test quickly?"),
-                IdeaSuggestion(kind: .pathway, text: "Turn it into a tiny experiment with one audience, one promise, and one success signal."),
-                IdeaSuggestion(kind: .pathway, text: "Add a concrete next step: who tries it, what happens, and what you learn.")
-            ]
-        case .moreHelp:
-            suggestions = [
-                IdeaSuggestion(kind: .question, text: "What would someone misunderstand about \(focus) if they only heard the title?"),
-                IdeaSuggestion(kind: .pathway, text: "Sketch two versions: the practical version people need and the weird version people remember."),
-                IdeaSuggestion(kind: .assumption, text: "Check whether the main assumption is demand, timing, trust, or your ability to deliver it.")
-            ]
-        }
-
-        return IdeaAssistanceResult(
-            suggestions: suggestions,
-            source: .localFallback,
-            assistanceLevel: request.assistanceLevel,
-            modelName: modelName
-        )
-    }
-
-    private static func focusPhrase(from request: IdeaAssistanceRequest) -> String {
-        let title = request.trimmedTitle
-        if !title.isEmpty {
-            return title
-        }
-
-        let words = request.trimmedBody
-            .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
-            .prefix(5)
-            .joined(separator: " ")
-
-        return words.isEmpty ? "this idea" : words
     }
 }
 

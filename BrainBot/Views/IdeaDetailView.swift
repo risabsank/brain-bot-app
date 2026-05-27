@@ -19,6 +19,8 @@ struct IdeaDetailView: View {
     @State private var transcript: String
     @State private var selectedAssistanceLevel: IdeaAssistanceLevel = .standard
     @State private var isGenerating = false
+    @State private var generationProgress: Double = 0
+    @State private var estimatedDuration: TimeInterval = 8
     @State private var generationError: String?
     @State private var showsGenerationError = false
 
@@ -291,13 +293,17 @@ struct IdeaDetailView: View {
             }
 
             if isGenerating {
-                HStack(spacing: 10) {
-                    ProgressView()
-                    Text("Growing pathways…")
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(Color.gardenInk2)
+                VStack(spacing: 6) {
+                    ProgressView(value: generationProgress)
+                        .tint(Color.moss)
+                        .animation(.linear(duration: 0.15), value: generationProgress)
+                    let secondsLeft = max(0, Int(ceil(estimatedDuration * (1 - generationProgress))))
+                    Text(generationProgress < 0.04 ? "Starting local AI…" : "~\(secondsLeft)s left")
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Color.gardenInk3)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, 6)
             }
 
             ForEach(results.prefix(3)) { result in
@@ -411,14 +417,36 @@ struct IdeaDetailView: View {
 
     private func generateSuggestions() async {
         let body = transcript.isEmpty ? bodyText : transcript
-        await MainActor.run { isGenerating = true; generationError = nil; autosave() }
+        isGenerating = true
+        generationError = nil
+        generationProgress = 0
+        let startTime = Date()
+        autosave()
+
+        let progressTracking = Task {
+            while !Task.isCancelled {
+                let elapsed = Date().timeIntervalSince(startTime)
+                generationProgress = min(0.95, elapsed / estimatedDuration)
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+        }
+
         do {
             let result = try await assistantService.generateSuggestions(
                 for: IdeaAssistanceRequest(title: title, body: body, assistanceLevel: selectedAssistanceLevel)
             )
-            await MainActor.run { store.addAssistanceResult(result, to: idea.id); isGenerating = false }
+            let elapsed = Date().timeIntervalSince(startTime)
+            progressTracking.cancel()
+            store.addAssistanceResult(result, to: idea.id)
+            estimatedDuration = max(3, elapsed)
+            generationProgress = 1.0
+            isGenerating = false
         } catch {
-            await MainActor.run { generationError = error.localizedDescription; showsGenerationError = true; isGenerating = false }
+            progressTracking.cancel()
+            generationError = error.localizedDescription
+            showsGenerationError = true
+            generationProgress = 0
+            isGenerating = false
         }
     }
 }
