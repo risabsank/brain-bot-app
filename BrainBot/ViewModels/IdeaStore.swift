@@ -10,9 +10,21 @@ import Combine
 internal import SwiftUI
 
 final class IdeaStore: ObservableObject {
-    @Published var ideas: [Idea] = IdeaStore.sampleIdeas
+    @Published var ideas: [Idea] = []
     @Published var searchText: String = ""
     @Published var dailyEntries: [String] = []
+
+    // Gamification
+    @Published var xp: Int = 0
+    @Published var level: Int = 1
+    @Published var streak: Int = 0
+    @Published var sproutsToday: Int = 0
+
+    func grantXP(_ amount: Int) {
+        xp += amount
+        sproutsToday += 1
+        while xp >= 100 { xp -= 100; level += 1 }
+    }
 
     var filteredIdeas: [Idea] {
         guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -159,30 +171,4 @@ final class IdeaStore: ObservableObject {
         dailyEntries.append(cleanValue)
     }
 
-    private static let sampleIdeas: [Idea] = [
-        Idea(
-            title: "Podcast hook ideas",
-            body: "Open each episode with a 20-second true story before the lesson.",
-            category: .creatorMode,
-            visualStyle: .mist
-        ),
-        Idea(
-            title: "Weekend pop-up cart",
-            body: "Test a one-day iced tea cart near the bike trail and track repeat buyers.",
-            category: .experiment,
-            visualStyle: .sage
-        ),
-        Idea(
-            title: "Fitness challenge mini-app",
-            body: "7-day bodyweight challenge with daily check-ins and buddy invites.",
-            category: .longTerm,
-            visualStyle: .paper
-        ),
-        Idea(
-            title: "Newsletter growth",
-            body: "Offer one practical template every Friday to increase referrals.",
-            category: .quickWin,
-            visualStyle: .night
-        )
-    ]
 }

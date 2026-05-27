@@ -1,132 +1,118 @@
 //
 //  RootTabView.swift
 //  BrainBot
-//
-//  Created by Risab Sankar on 4/15/26.
-//
 
 internal import SwiftUI
 
+enum GardenTab { case ideas, sprint }
+
 struct RootTabView: View {
+    @EnvironmentObject private var store: IdeaStore
+    @State private var activeTab: GardenTab = .ideas
+    @State private var plantSheetOpen = false
+
     var body: some View {
-        TabView {
-            IdeaFeedView()
-                .tabItem {
-                    Label("Ideas", systemImage: "lightbulb.max.fill")
+        ZStack(alignment: .bottom) {
+            Group {
+                switch activeTab {
+                case .ideas:
+                    IdeaFeedView(onPlant: { plantSheetOpen = true },
+                                 onSprint: { withAnimation { activeTab = .sprint } })
+                case .sprint:
+                    DailyChallengeView(onBack: { withAnimation { activeTab = .ideas } })
                 }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            CaptureIdeaView()
-                .tabItem {
-                    Label("Capture", systemImage: "plus.circle.fill")
-                }
-
-            DailyChallengeView()
-                .tabItem {
-                    Label("Daily", systemImage: "target")
-                }
-
-            ActivityTrackerView()
-                .tabItem {
-                    Label("Activity", systemImage: "calendar")
-                }
+            if activeTab == .ideas {
+                FloatingTabBar(activeTab: $activeTab, onPlant: { plantSheetOpen = true })
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
-        .tint(.midnightGreen)
+        .ignoresSafeArea(.keyboard)
+        .sheet(isPresented: $plantSheetOpen) {
+            CaptureIdeaView()
+                .environmentObject(store)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
+        .animation(.easeInOut(duration: 0.22), value: activeTab)
     }
 }
 
-private struct ActivityTrackerView: View {
-    @EnvironmentObject private var store: IdeaStore
+// MARK: - Floating pill tab bar
 
-    private var weekDays: [(date: Date, count: Int)] {
-        store.currentWeekContributionDays
-            .map { (date: $0.key, count: $0.value) }
-            .sorted { $0.date < $1.date }
-    }
+private struct FloatingTabBar: View {
+    @Binding var activeTab: GardenTab
+    let onPlant: () -> Void
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Past 7 Days")
-                            .font(.title2.bold())
-                            .foregroundStyle(Color.midnightGreen)
-
-                        Text("\(store.currentWeekContributionTotal) idea contributions")
-                            .font(.headline)
-
-                        Text("Recordings, typed ideas, and saved transcripts all count when an idea is saved.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .cardStyle()
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Calendar")
-                            .font(.headline)
-
-                        HStack(alignment: .bottom, spacing: 8) {
-                            ForEach(weekDays, id: \.date) { day in
-                                VStack(spacing: 8) {
-                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                        .fill(color(for: day.count))
-                                        .frame(height: height(for: day.count))
-                                        .frame(maxHeight: 96, alignment: .bottom)
-
-                                    Text(day.date, format: .dateTime.weekday(.narrow))
-                                        .font(.caption2.weight(.semibold))
-                                        .foregroundStyle(.secondary)
-
-                                    Text("\(day.count)")
-                                        .font(.caption.weight(.bold))
-                                        .foregroundStyle(Color.midnightGreen)
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                        }
-                        .frame(height: 140)
-                    }
-                    .cardStyle()
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Recent Contributions")
-                            .font(.headline)
-
-                        ForEach(store.ideas.prefix(5)) { idea in
-                            HStack(alignment: .top, spacing: 10) {
-                                Image(systemName: idea.audioRecordingURL == nil ? "lightbulb.fill" : "waveform")
-                                    .foregroundStyle(Color.midnightGreen)
-                                    .frame(width: 20)
-
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(idea.title)
-                                        .font(.subheadline.weight(.semibold))
-                                    Text(idea.createdAt, format: .dateTime.weekday().month().day().hour().minute())
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                    }
-                    .cardStyle()
-                }
-                .padding()
+        HStack(spacing: 0) {
+            TabBarItem(icon: "leaf.fill", label: "Ideas", active: activeTab == .ideas) {
+                withAnimation(.easeOut(duration: 0.18)) { activeTab = .ideas }
             }
-            .background(Color.cloud)
-            .navigationTitle("Activity")
-        }
-    }
 
-    private func color(for count: Int) -> Color {
-        switch count {
-        case 0: return Color.gray.opacity(0.18)
-        case 1: return Color.midnightGreen.opacity(0.35)
-        case 2: return Color.midnightGreen.opacity(0.6)
-        default: return Color.midnightGreen
-        }
-    }
+            // Center FAB
+            Button(action: onPlant) {
+                Circle()
+                    .fill(Color.moss)
+                    .frame(width: 56, height: 56)
+                    .overlay(
+                        Image(systemName: "plus")
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundStyle(.white)
+                    )
+                    .shadow(
+                        color: Color.moss.opacity(0.40),
+                        radius: 9, y: 4
+                    )
+            }
+            .offset(y: -10)
+            .padding(.horizontal, 6)
 
-    private func height(for count: Int) -> CGFloat {
-        CGFloat(max(18, min(96, 18 + count * 22)))
+            TabBarItem(icon: "target", label: "Sprint", active: activeTab == .sprint) {
+                withAnimation(.easeOut(duration: 0.18)) { activeTab = .sprint }
+            }
+        }
+        .frame(height: 68)
+        .padding(.horizontal, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(.white.opacity(0.85))
+                .background(
+                    Material.regularMaterial,
+                    in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.14), radius: 14, y: 6)
+        )
+        .padding(.horizontal, 14)
+        .padding(.bottom, 14)
+    }
+}
+
+private struct TabBarItem: View {
+    let icon: String
+    let label: String
+    let active: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                Text(label)
+                    .font(.system(size: 10.5, weight: .bold))
+            }
+            .foregroundStyle(active ? Color.moss : Color.gardenInk3)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
+        .animation(.easeOut(duration: 0.15), value: active)
     }
 }

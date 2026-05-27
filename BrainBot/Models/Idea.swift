@@ -1,9 +1,6 @@
 //
 //  Ideas.swift
 //  BrainBot
-//
-//  Created by Risab Sankar on 4/15/26.
-//
 
 import Foundation
 internal import SwiftUI
@@ -43,29 +40,42 @@ struct Idea: Identifiable, Hashable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
+
+    var growthLevel: Int {
+        min(3, assistanceResults.count + 1)
+    }
 }
 
 enum IdeaCategory: String, CaseIterable, Identifiable {
-    case quickWin = "Quick Win"
-    case longTerm = "Long Term"
+    case quickWin    = "Quick Win"
+    case longTerm    = "Long Term"
     case creatorMode = "Creator Mode"
-    case experiment = "Experiment"
+    case experiment  = "Experiment"
 
     var id: String { rawValue }
 
     var icon: String {
         switch self {
-        case .quickWin: return "bolt.fill"
-        case .longTerm: return "clock.fill"
+        case .quickWin:    return "bolt.fill"
+        case .longTerm:    return "clock.fill"
         case .creatorMode: return "paintpalette.fill"
-        case .experiment: return "flask.fill"
+        case .experiment:  return "flask.fill"
+        }
+    }
+
+    var emoji: String {
+        switch self {
+        case .quickWin:    return "⚡"
+        case .longTerm:    return "🌳"
+        case .creatorMode: return "🎨"
+        case .experiment:  return "🧪"
         }
     }
 }
 
 enum IdeaVisualStyle: String, CaseIterable, Identifiable {
-    case mist = "Mist"
-    case sage = "Sage"
+    case mist  = "Mist"
+    case sage  = "Sage"
     case paper = "Paper"
     case night = "Night"
 
@@ -73,10 +83,30 @@ enum IdeaVisualStyle: String, CaseIterable, Identifiable {
 
     var backgroundColor: Color {
         switch self {
-        case .mist: return Color(red: 0.92, green: 0.96, blue: 0.95)
-        case .sage: return Color(red: 0.84, green: 0.91, blue: 0.89)
-        case .paper: return Color.white
-        case .night: return Color.midnightGreen.opacity(0.14)
+        case .mist:  return Color(hex: "D5ECE3")
+        case .sage:  return Color(hex: "B8DAB7")
+        case .paper: return Color(hex: "FBF1D9")
+        case .night: return Color(hex: "2A4438")
         }
     }
+
+    var foregroundColor: Color {
+        switch self {
+        case .mist:  return Color(hex: "0B3A2A")
+        case .sage:  return Color(hex: "173B17")
+        case .paper: return Color(hex: "5A3E0A")
+        case .night: return Color(hex: "E6F0E5")
+        }
+    }
+
+    var ringColor: Color {
+        switch self {
+        case .mist:  return Color(hex: "A4D3C0")
+        case .sage:  return Color(hex: "7BB47A")
+        case .paper: return Color(hex: "E0CE9C")
+        case .night: return Color(hex: "4F7C68")
+        }
+    }
+
+    var isNight: Bool { self == .night }
 }

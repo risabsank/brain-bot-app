@@ -61,19 +61,14 @@ final class IdeaAssistantService {
             if Self.passesQualityGate(result) {
                 return result
             }
+        } catch IdeaAssistantError.emptyIdea {
+            throw IdeaAssistantError.emptyIdea
         } catch {
-            if case IdeaAssistantError.localModelUnavailable = error {
-                throw error
-            }
-
-            throw error
+            // Local model unavailable or produced bad JSON — fall through to heuristic
         }
 
-        guard allowsCloudEscalation else {
-            throw IdeaAssistantError.cloudResponseInvalid
-        }
-
-        return try await cloudProvider.suggestions(for: request)
+        // Heuristic fallback: always works, instant
+        return try await HeuristicIdeaProvider().suggestions(for: request)
     }
 
     static func passesQualityGate(_ result: IdeaAssistanceResult) -> Bool {
