@@ -139,6 +139,7 @@ struct CaptureIdeaView: View {
     @ViewBuilder
     private var voiceSection: some View {
         if recorder.isRecording {
+            // Actively recording
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 10) {
                     ZStack {
@@ -155,7 +156,7 @@ struct CaptureIdeaView: View {
                         Text("Listening…")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(Color.gardenInk)
-                        Text("Transcribing on-device")
+                        Text("Recording in progress")
                             .font(.system(size: 12))
                             .foregroundStyle(Color.gardenInk3)
                     }
@@ -166,29 +167,16 @@ struct CaptureIdeaView: View {
                         .symbolEffect(.pulse)
                 }
 
-                HStack(spacing: 8) {
-                    Button { recorder.toggleRecording() } label: {
-                        Text("Stop")
-                            .font(.system(size: 14, weight: .bold))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 40)
-                            .foregroundStyle(Color.mossDark)
-                            .background(Color.mossSoft)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-
-                    Button { recorder.finishSession(shouldTranscribe: true) } label: {
-                        Text("Finish & insert")
-                            .font(.system(size: 14, weight: .bold))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 40)
-                            .foregroundStyle(.white)
-                            .background(Color.moss)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
+                Button { recorder.toggleRecording() } label: {
+                    Text("Pause")
+                        .font(.system(size: 14, weight: .bold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .foregroundStyle(Color.mossDark)
+                        .background(Color.mossSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
+                .buttonStyle(.plain)
             }
             .padding(16)
             .background(Color.white)
@@ -198,7 +186,97 @@ struct CaptureIdeaView: View {
                     .stroke(Color.amber, lineWidth: 1.5)
             )
             .shadow(color: Color.amber.opacity(0.15), radius: 8, y: 3)
-        } else {
+
+        } else if recorder.hasRecording && !recorder.didFinishSession {
+            // Paused — let user choose whether to transcribe
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.mossSoft)
+                            .frame(width: 36, height: 36)
+                        Image(systemName: "pause.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.moss)
+                    }
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Recording paused")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Color.gardenInk)
+                        Text("Resume or choose how to save")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.gardenInk3)
+                    }
+                    Spacer()
+                }
+
+                HStack(spacing: 8) {
+                    Button { recorder.toggleRecording() } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "mic.fill").font(.system(size: 12))
+                            Text("Resume")
+                        }
+                        .font(.system(size: 13, weight: .bold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .foregroundStyle(Color.mossDark)
+                        .background(Color.mossSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button { recorder.finishSession(shouldTranscribe: false) } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "waveform").font(.system(size: 12))
+                            Text("Audio only")
+                        }
+                        .font(.system(size: 13, weight: .bold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .foregroundStyle(Color.gardenInk)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    Button { recorder.finishSession(shouldTranscribe: true) } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "text.bubble").font(.system(size: 12))
+                            Text("Transcribe")
+                        }
+                        .font(.system(size: 13, weight: .bold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .foregroundStyle(.white)
+                        .background(Color.moss)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(16)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.black.opacity(0.10), lineWidth: 1)
+            )
+
+        } else if recorder.isTranscribing {
+            HStack(spacing: 8) {
+                ProgressView()
+                Text("Transcribing…")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.gardenInk2)
+            }
+            .padding(.horizontal, 4)
+
+        } else if !recorder.didFinishSession {
+            // Idle — no recording yet
             Button { recorder.toggleRecording() } label: {
                 HStack(spacing: 12) {
                     ZStack {
@@ -213,7 +291,7 @@ struct CaptureIdeaView: View {
                         Text("Use your voice")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(Color.gardenInk)
-                        Text("Tap and speak — we'll transcribe")
+                        Text("Tap and speak — choose to transcribe or keep audio")
                             .font(.system(size: 12))
                             .foregroundStyle(Color.gardenInk2)
                     }
@@ -232,17 +310,6 @@ struct CaptureIdeaView: View {
                 .shadow(color: .black.opacity(0.03), radius: 2, y: 1)
             }
             .buttonStyle(.plain)
-            .disabled(recorder.didFinishSession || recorder.isTranscribing)
-
-            if recorder.isTranscribing {
-                HStack(spacing: 8) {
-                    ProgressView()
-                    Text("Transcribing…")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Color.gardenInk2)
-                }
-                .padding(.horizontal, 4)
-            }
         }
     }
 

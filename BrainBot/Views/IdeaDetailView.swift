@@ -182,27 +182,45 @@ struct IdeaDetailView: View {
             }
 
             if let url = idea.audioRecordingURL {
-                HStack(spacing: 10) {
-                    Image(systemName: "waveform")
-                        .foregroundStyle(Color.moss)
-                    Text(url.lastPathComponent)
-                        .font(.system(size: 13))
-                        .foregroundStyle(Color.moss)
-                        .lineLimit(1)
-                    Spacer()
-                    Button(audioPlayer.isPlaying ? "Stop" : "Play") {
-                        audioPlayer.toggle(url: url)
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(audioPlayer.isPlaying ? Color.amber : Color.mossSoft)
+                            .frame(width: 40, height: 40)
+                        Image(systemName: audioPlayer.isPlaying ? "stop.fill" : "play.fill")
+                            .font(.system(size: 15))
+                            .foregroundStyle(audioPlayer.isPlaying ? .white : Color.moss)
                     }
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.moss)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.mossSoft)
-                    .clipShape(Capsule())
+                    .shadow(color: audioPlayer.isPlaying ? Color.amber.opacity(0.30) : .clear, radius: 4, y: 2)
+                    .animation(.easeOut(duration: 0.2), value: audioPlayer.isPlaying)
+                    .onTapGesture { audioPlayer.toggle(url: url) }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Voice recording")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.gardenInk)
+                        Text(audioPlayer.isPlaying ? "Playing…" : "Tap to replay")
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(Color.gardenInk3)
+                    }
+
+                    Spacer()
+
+                    if audioPlayer.isPlaying {
+                        Image(systemName: "waveform")
+                            .font(.system(size: 16))
+                            .foregroundStyle(Color.amber)
+                            .symbolEffect(.pulse)
+                    }
                 }
                 .padding(12)
                 .background(Color.white)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(audioPlayer.isPlaying ? Color.amber.opacity(0.5) : Color.black.opacity(0.08), lineWidth: 1)
+                )
+                .animation(.easeOut(duration: 0.2), value: audioPlayer.isPlaying)
             }
 
             if !transcript.isEmpty {
