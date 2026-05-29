@@ -23,6 +23,8 @@ struct IdeaDetailView: View {
     @State private var estimatedDuration: TimeInterval = 8
     @State private var generationError: String?
     @State private var showsGenerationError = false
+    @State private var showBubbleCanvas = false
+    @State private var liveMap: BubbleMap = BubbleMap()
 
     private let idea: Idea
     private let assistantService = IdeaAssistantService()
@@ -40,6 +42,7 @@ struct IdeaDetailView: View {
         _category = State(initialValue: idea.category)
         _style    = State(initialValue: idea.visualStyle)
         _transcript = State(initialValue: idea.transcript ?? "")
+        _liveMap  = State(initialValue: idea.bubbleMap ?? BubbleMap())
     }
 
     private var autosaveKey: String {
@@ -54,6 +57,22 @@ struct IdeaDetailView: View {
             footer
         }
         .background(Color.gardenSurface2.ignoresSafeArea())
+        .fullScreenCover(isPresented: $showBubbleCanvas) {
+            NavigationStack {
+                IdeaBubbleCanvasView(map: $liveMap, onSave: {
+                    store.updateBubbleMap(liveMap, for: idea.id)
+                })
+                .navigationTitle("Bubble Map")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Done") { showBubbleCanvas = false }
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Color.moss)
+                    }
+                }
+            }
+        }
         .alert("AI Assistant Unavailable", isPresented: $showsGenerationError) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -238,6 +257,42 @@ struct IdeaDetailView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
             }
+
+            // Bubble map entry point
+            Button {
+                if liveMap.nodes.isEmpty, let saved = store.idea(withID: idea.id)?.bubbleMap {
+                    liveMap = saved
+                }
+                showBubbleCanvas = true
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "square.grid.3x3.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color.moss)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(liveMap.nodes.isEmpty ? "Create Bubble Map" : "Edit Bubble Map")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Color.gardenInk)
+                        Text(liveMap.nodes.isEmpty
+                             ? "Visually explore this idea"
+                             : "\(liveMap.nodes.count) bubble\(liveMap.nodes.count == 1 ? "" : "s")")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.gardenInk3)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color.gardenInk3)
+                }
+                .padding(14)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.moss.opacity(0.25), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
 
             // Autosave indicator
             HStack(spacing: 6) {

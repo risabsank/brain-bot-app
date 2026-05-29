@@ -18,6 +18,8 @@ struct CaptureIdeaView: View {
     @State private var draftIdeaID: UUID?
     @State private var plantedSuggestionIDs: Set<UUID> = []
     @State private var plantBurst = false
+    @State private var showBubbleMap = false
+    @State private var selectedCategory: IdeaCategory = .creatorMode
 
     private var suggestions: [IdeaSuggestion] {
         guard let id = draftIdeaID, let idea = store.idea(withID: id) else { return [] }
@@ -55,6 +57,12 @@ struct CaptureIdeaView: View {
             captureFooter
         }
         .background(Color.gardenSurface2.ignoresSafeArea())
+        .sheet(isPresented: $showBubbleMap) {
+            IdeaBubbleMapView()
+                .environmentObject(store)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
         .onAppear {
             recorder.requestPermissions()
             generation.startPolling()
@@ -88,7 +96,14 @@ struct CaptureIdeaView: View {
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(Color.gardenInk)
             Spacer()
-            Color.clear.frame(width: 36, height: 36)
+            Button { showBubbleMap = true } label: {
+                Image(systemName: "circle.hexagongrid.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 36, height: 36)
+                    .background(Color.mossSoft)
+                    .clipShape(Circle())
+                    .foregroundStyle(Color.moss)
+            }
         }
         .padding(.horizontal, 20)
         .padding(.top, 8)
@@ -452,6 +467,38 @@ struct CaptureIdeaView: View {
     private var captureFooter: some View {
         VStack(spacing: 0) {
             Divider().opacity(0.5)
+
+            // Category chips
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(IdeaCategory.allCases) { cat in
+                        Button { selectedCategory = cat } label: {
+                            HStack(spacing: 5) {
+                                Text(cat.emoji).font(.system(size: 13))
+                                Text(cat.rawValue)
+                                    .font(.system(size: 12, weight: .semibold))
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .foregroundStyle(selectedCategory == cat ? .white : Color.gardenInk2)
+                            .background(selectedCategory == cat ? Color.moss : Color.white)
+                            .clipShape(Capsule())
+                            .overlay(
+                                Capsule().stroke(
+                                    selectedCategory == cat ? Color.clear : Color.black.opacity(0.10),
+                                    lineWidth: 1
+                                )
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .animation(.easeOut(duration: 0.15), value: selectedCategory)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 4)
+            }
+
             HStack(spacing: 12) {
                 Button { generation.triggerImmediate() } label: {
                     Image(systemName: "brain.head.profile")
@@ -488,7 +535,8 @@ struct CaptureIdeaView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 18)
+            .padding(.top, 10)
+            .padding(.bottom, 18)
         }
         .background(Color.gardenSurface2)
     }
@@ -525,7 +573,7 @@ struct CaptureIdeaView: View {
             id: draftIdeaID,
             title: title,
             body: body,
-            category: .creatorMode,
+            category: selectedCategory,
             style: .sage,
             audioRecordingURL: recorder.didFinishSession ? recorder.recordingURL : nil,
             transcript: recorder.transcript
@@ -648,7 +696,9 @@ final class GenerationCoordinator: ObservableObject {
 
         let request = IdeaAssistanceRequest(title: title, body: body, assistanceLevel: .standard)
         do {
-            let result = try await LlamaCppLocalIdeaProvider().suggestions(for: request)
+            let result = try await Task.detached(priority: .userInitiated) {
+                try await LlamaCppLocalIdeaProvider().suggestions(for: request)
+            }.value
             if IdeaAssistantService.passesQualityGate(result) {
                 pendingResult = result
                 generationProgress = 1.0

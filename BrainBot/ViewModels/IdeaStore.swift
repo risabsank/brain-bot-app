@@ -159,6 +159,12 @@ final class IdeaStore: ObservableObject {
         ideas[index].updatedAt = .now
     }
 
+    func updateBubbleMap(_ bubbleMap: BubbleMap, for ideaId: UUID) {
+        guard let index = ideas.firstIndex(where: { $0.id == ideaId }) else { return }
+        ideas[index].bubbleMap = bubbleMap
+        ideas[index].updatedAt = .now
+    }
+
     func deleteIdeas(at offsets: IndexSet) {
         for index in offsets.sorted(by: >) {
             ideas.remove(at: index)

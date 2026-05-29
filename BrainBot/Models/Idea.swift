@@ -14,6 +14,7 @@ struct Idea: Identifiable, Hashable {
     var assistanceResults: [IdeaAssistanceResult]
     var audioRecordingURL: URL?
     var transcript: String?
+    var bubbleMap: BubbleMap?
     let createdAt: Date
     var updatedAt: Date
 
@@ -26,6 +27,7 @@ struct Idea: Identifiable, Hashable {
         assistanceResults: [IdeaAssistanceResult] = [],
         audioRecordingURL: URL? = nil,
         transcript: String? = nil,
+        bubbleMap: BubbleMap? = nil,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -37,6 +39,7 @@ struct Idea: Identifiable, Hashable {
         self.assistanceResults = assistanceResults
         self.audioRecordingURL = audioRecordingURL
         self.transcript = transcript
+        self.bubbleMap = bubbleMap
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
