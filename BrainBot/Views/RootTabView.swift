@@ -53,22 +53,9 @@ private struct FloatingTabBar: View {
             }
 
             // Center FAB
-            Button(action: onPlant) {
-                Circle()
-                    .fill(Color.moss)
-                    .frame(width: 56, height: 56)
-                    .overlay(
-                        Image(systemName: "plus")
-                            .font(.system(size: 24, weight: .semibold))
-                            .foregroundStyle(.white)
-                    )
-                    .shadow(
-                        color: Color.moss.opacity(0.40),
-                        radius: 9, y: 4
-                    )
-            }
-            .offset(y: -10)
-            .padding(.horizontal, 6)
+            FABButton(action: onPlant)
+                .offset(y: -10)
+                .padding(.horizontal, 6)
 
             TabBarItem(icon: "target", label: "Sprint", active: activeTab == .sprint) {
                 withAnimation(.easeOut(duration: 0.18)) { activeTab = .sprint }
@@ -91,6 +78,40 @@ private struct FloatingTabBar: View {
         )
         .padding(.horizontal, 14)
         .padding(.bottom, 14)
+    }
+}
+
+private struct FABButton: View {
+    let action: () -> Void
+    @State private var pulseScale: CGFloat = 1
+    @State private var pulseOpacity: Double = 0.6
+
+    var body: some View {
+        Button(action: action) {
+            Circle()
+                .fill(Color.moss)
+                .frame(width: 56, height: 56)
+                .overlay(
+                    Image(systemName: "plus")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(.white)
+                )
+                .shadow(color: Color.moss.opacity(0.40), radius: 9, y: 4)
+        }
+        .overlay(
+            Circle()
+                .stroke(Color.moss, lineWidth: 2)
+                .frame(width: 56, height: 56)
+                .scaleEffect(pulseScale)
+                .opacity(pulseOpacity)
+                .allowsHitTesting(false)
+        )
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.8).repeatForever(autoreverses: false).delay(1.5)) {
+                pulseScale   = 1.72
+                pulseOpacity = 0
+            }
+        }
     }
 }
 

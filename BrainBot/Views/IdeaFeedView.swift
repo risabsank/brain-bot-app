@@ -244,8 +244,8 @@ struct IdeaFeedView: View {
                     .padding(.top, 60)
             } else {
                 LazyVGrid(columns: columns, spacing: 10) {
-                    ForEach(filteredIdeas) { idea in
-                        SeedCardView(idea: idea)
+                    ForEach(Array(filteredIdeas.enumerated()), id: \.element.id) { idx, idea in
+                        SeedCardView(idea: idea, index: idx)
                             .onTapGesture { selectedIdea = idea }
                     }
                 }
@@ -258,14 +258,7 @@ struct IdeaFeedView: View {
 
     private var emptyState: some View {
         VStack(spacing: 16) {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(Color.mossSoft)
-                .frame(width: 96, height: 96)
-                .overlay(
-                    Image(systemName: "leaf.fill")
-                        .font(.system(size: 44))
-                        .foregroundStyle(Color.moss)
-                )
+            BreathingLeafBadge()
                 .shadow(color: Color.moss.opacity(0.15), radius: 14, y: 6)
 
             Text(searchText.isEmpty ? "Your garden is empty" : "No seeds match")
@@ -304,10 +297,36 @@ struct IdeaFeedView: View {
     }
 }
 
+// MARK: - Breathing empty-state badge
+
+private struct BreathingLeafBadge: View {
+    @State private var scale: CGFloat = 1
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 28, style: .continuous)
+            .fill(Color.mossSoft)
+            .frame(width: 96, height: 96)
+            .overlay(
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: 44))
+                    .foregroundStyle(Color.moss)
+            )
+            .scaleEffect(scale)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
+                    scale = 1.06
+                }
+            }
+    }
+}
+
 // MARK: - Seed card
 
 struct SeedCardView: View {
     let idea: Idea
+    var index: Int = 0
+
+    @State private var appeared = false
 
     var body: some View {
         let dark = idea.visualStyle.isNight
@@ -387,6 +406,15 @@ struct SeedCardView: View {
             color: dark ? .black.opacity(0.22) : .black.opacity(0.06),
             radius: dark ? 7 : 6, y: dark ? 3 : 4
         )
+        .opacity(appeared ? 1 : 0)
+        .scaleEffect(appeared ? 1 : 0.88)
+        .offset(y: appeared ? 0 : 10)
+        .onAppear {
+            let delay = Double(min(index, 7)) * 0.055
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.75).delay(delay)) {
+                appeared = true
+            }
+        }
     }
 }
 

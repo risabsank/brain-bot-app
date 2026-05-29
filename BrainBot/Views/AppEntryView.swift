@@ -6,12 +6,26 @@ internal import SwiftUI
 
 struct AppEntryView: View {
     @State private var isSignedIn = false
+    @State private var splashDone = false
 
     var body: some View {
-        if isSignedIn {
-            RootTabView()
-        } else {
-            EntryGateView(isSignedIn: $isSignedIn)
+        ZStack {
+            if splashDone {
+                if isSignedIn {
+                    RootTabView()
+                        .transition(.opacity)
+                } else {
+                    EntryGateView(isSignedIn: $isSignedIn)
+                        .transition(.opacity)
+                }
+            }
+
+            if !splashDone {
+                SplashView {
+                    withAnimation(.easeOut(duration: 0.3)) { splashDone = true }
+                }
+                .ignoresSafeArea()
+            }
         }
     }
 }
@@ -20,6 +34,10 @@ struct AppEntryView: View {
 
 private struct EntryGateView: View {
     @Binding var isSignedIn: Bool
+
+    @State private var logoIn   = false
+    @State private var statsIn  = false
+    @State private var ctaIn    = false
 
     var body: some View {
         ZStack {
@@ -30,12 +48,23 @@ private struct EntryGateView: View {
             VStack(alignment: .leading, spacing: 0) {
                 Spacer()
                 logoLockup
+                    .opacity(logoIn ? 1 : 0)
+                    .offset(y: logoIn ? 0 : 18)
                 Spacer()
                 statsTeaser
+                    .opacity(statsIn ? 1 : 0)
+                    .offset(x: statsIn ? 0 : -24)
                     .padding(.bottom, 16)
                 ctaSection
+                    .opacity(ctaIn ? 1 : 0)
+                    .offset(y: ctaIn ? 0 : 16)
             }
             .padding(.horizontal, 28)
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.75))            { logoIn  = true }
+            withAnimation(.spring(response: 0.5,  dampingFraction: 0.78).delay(0.12)) { statsIn = true }
+            withAnimation(.spring(response: 0.5,  dampingFraction: 0.78).delay(0.22)) { ctaIn   = true }
         }
     }
 

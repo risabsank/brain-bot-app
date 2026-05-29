@@ -11,6 +11,8 @@ struct DailyChallengeView: View {
     @State private var entry = ""
     @State private var pops: [(id: UUID, text: String)] = []
     @State private var celebrate = false
+    @State private var heroScale: CGFloat = 0.6
+    @State private var heroOpacity: Double = 0
     private let challenge = AlternateUsesChallenge.today()
     private let goal = 10
 
@@ -110,6 +112,14 @@ struct DailyChallengeView: View {
                 .font(.display(64))
                 .foregroundStyle(.white)
                 .tracking(-2)
+                .scaleEffect(heroScale)
+                .opacity(heroOpacity)
+                .onAppear {
+                    withAnimation(.spring(response: 0.55, dampingFraction: 0.60).delay(0.2)) {
+                        heroScale   = 1
+                        heroOpacity = 1
+                    }
+                }
 
             Text(challenge.prompt)
                 .font(.system(size: 14))

@@ -17,6 +17,7 @@ struct CaptureIdeaView: View {
     @State private var ideaText = ""
     @State private var draftIdeaID: UUID?
     @State private var plantedSuggestionIDs: Set<UUID> = []
+    @State private var plantBurst = false
 
     private var suggestions: [IdeaSuggestion] {
         guard let id = draftIdeaID, let idea = store.idea(withID: id) else { return [] }
@@ -411,6 +412,13 @@ struct CaptureIdeaView: View {
                 }
                 .buttonStyle(GardenButtonStyle())
                 .frame(maxWidth: .infinity)
+                .overlay(alignment: .top) {
+                    if plantBurst {
+                        PlantLeafBurst()
+                            .offset(y: -28)
+                            .allowsHitTesting(false)
+                    }
+                }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 18)
@@ -431,9 +439,10 @@ struct CaptureIdeaView: View {
     }
 
     private func saveSeed() {
+        plantBurst = true
         autosave()
         store.grantXP(15)
-        dismiss()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { dismiss() }
     }
 
     private func autosave() {
@@ -462,6 +471,38 @@ struct CaptureIdeaView: View {
             .textCase(.uppercase)
             .tracking(1)
             .foregroundStyle(Color.gardenInk3)
+    }
+}
+
+// MARK: - Plant leaf burst
+
+private struct PlantLeafBurst: View {
+    private struct Leaf {
+        let dx: CGFloat; let dy: CGFloat; let size: CGFloat; let rotation: Double; let delay: Double
+    }
+    private let leaves: [Leaf] = [
+        Leaf(dx: -32, dy: -52, size: 15, rotation: -35, delay: 0.00),
+        Leaf(dx:   0, dy: -68, size: 18, rotation:  10, delay: 0.06),
+        Leaf(dx:  32, dy: -52, size: 14, rotation:  40, delay: 0.12),
+        Leaf(dx: -18, dy: -42, size: 11, rotation: -60, delay: 0.03),
+        Leaf(dx:  18, dy: -42, size: 11, rotation:  55, delay: 0.09),
+    ]
+    @State private var active = false
+
+    var body: some View {
+        ZStack {
+            ForEach(Array(leaves.enumerated()), id: \.offset) { _, leaf in
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: leaf.size))
+                    .foregroundStyle(Color.sprout)
+                    .rotationEffect(.degrees(leaf.rotation))
+                    .offset(x: active ? leaf.dx : 0, y: active ? leaf.dy : 0)
+                    .opacity(active ? 0 : 0.95)
+                    .scaleEffect(active ? 1.15 : 0.4)
+                    .animation(.easeOut(duration: 0.52).delay(leaf.delay), value: active)
+            }
+        }
+        .onAppear { withAnimation { active = true } }
     }
 }
 

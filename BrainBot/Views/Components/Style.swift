@@ -114,6 +114,9 @@ struct GardenButtonStyle: ButtonStyle {
 
 struct StreakPillView: View {
     let days: Int
+    @State private var scale: CGFloat = 0.6
+    @State private var opacity: Double = 0
+
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: "flame.fill")
@@ -130,6 +133,14 @@ struct StreakPillView: View {
         )
         .clipShape(Capsule())
         .shadow(color: Color.amber.opacity(0.45), radius: 4, y: 2)
+        .scaleEffect(scale)
+        .opacity(opacity)
+        .onAppear {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.60).delay(0.3)) {
+                scale   = 1
+                opacity = 1
+            }
+        }
     }
 }
 
@@ -138,16 +149,18 @@ struct LevelBarView: View {
     let xp: Int
     let xpMax: Int
 
+    @State private var displayedProgress: CGFloat = 0
+
     var body: some View {
         HStack(spacing: 6) {
             ZStack {
                 Circle()
-                    .trim(from: 0, to: CGFloat(xp) / CGFloat(xpMax))
-                    .stroke(Color.sprout, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
+                    .stroke(Color.mossSoft, lineWidth: 3)
                     .frame(width: 32, height: 32)
                 Circle()
-                    .stroke(Color.mossSoft, lineWidth: 3)
+                    .trim(from: 0, to: displayedProgress)
+                    .stroke(Color.sprout, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
                     .frame(width: 32, height: 32)
                 Circle()
                     .fill(Color.moss)
@@ -155,6 +168,11 @@ struct LevelBarView: View {
                 Text("\(level)")
                     .font(.display(12, weight: .bold))
                     .foregroundStyle(.white)
+            }
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.0).delay(0.35)) {
+                displayedProgress = CGFloat(xp) / CGFloat(max(xpMax, 1))
             }
         }
     }
